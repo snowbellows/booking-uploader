@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@types/lodash": "^4.14.175",
+    "@types/react-modal": "^3.12.1",
     "cors": "^2.8.4",
     "express": "^4.16.3",
+    "lodash": "^4.17.21",
     "neverthrow": "^4.2.2",
     "node-sass": "5",
     "papaparse": "^5.3.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-dropzone": "^11.4.0",
+    "react-modal": "^3.14.3",
     "react-scripts": "4.0.3"
   },
   "scripts": {

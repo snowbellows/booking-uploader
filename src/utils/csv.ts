@@ -1,9 +1,14 @@
-import { ok, err, Result } from 'neverthrow';
+import { ok, err, Result, combineWithAllErrors, combine } from 'neverthrow';
 import Papa, { ParseConfig, ParseResult, Parser, ParseError } from 'papaparse';
 
 import { Booking, isBooking, keys } from './booking';
 
-export function parseFile(file: File, preview = 0) {
+export function parseFile(
+  file: File,
+  onError: (error: ParseError | ParseError[]) => void,
+  onChunk: (bookings: Booking[]) => void,
+  preview = 0
+) {
   let chunkNumber = 0;
   let rowNumber = 0; // zero indexed, excludes header row to align with papaparse
   function parseChunk(
@@ -11,25 +16,30 @@ export function parseFile(file: File, preview = 0) {
     parser: Parser
   ): void {
     const trimmedFields = results.meta.fields?.map((field) => field.trim());
-    chunkNumber++
-    console.log(chunkNumber)
+    chunkNumber++;
+    console.log({ chunkNumber });
     checkHeaders(trimmedFields, keys).match(
       () => {
-        console.log(results.data);
-        results.data.forEach((row) => {
-          console.log(`Row ${rowNumber}`)
-          parseBooking(row, rowNumber).match(
-            (booking) => console.log(booking),
-            (e) => console.error(e)
-          );
-          rowNumber++;
-        });
-        results.errors.forEach((e) => {
-          console.error(e);
-        });
+        console.log({ results: results.data });
+        const bookings = combine(results.data
+          .map((row) => {
+            const bookingResult = parseBooking(row, rowNumber)
+            rowNumber++;
+            return bookingResult
+          })
+          .filter((bookingResult) => {
+            if (bookingResult.isErr()) {
+              bookingResult.mapErr(e => {onError(e)})
+              return false
+            }
+            return true
+          })).unwrapOr([]);
+
+        onChunk(bookings)
+        onError(results.errors);
       },
       (e) => {
-        console.error(e);
+        onError(e);
         parser.abort();
       }
     );
@@ -64,7 +74,7 @@ function parseBooking(
     return err({
       type: 'FieldMismatch',
       code: 'TooManyFields',
-      message: `Expected ${keys.length} fields, but parsed ${
+      message: `Too many fields: Expected ${keys.length} fields but parsed ${
         keys.length + trimmedRow.__parsed_extra.length
       }`,
       row: rowNumber,
@@ -82,40 +92,45 @@ function parseBooking(
       code: 'InvalidFields',
       message: `Expected an integer for field "duration", but parsed "${trimmedRow.duration}"`,
       row: rowNumber,
-    }
-    );
+    });
   }
 
   const parsedBooking = { ...trimmedRow, duration: parsedDuration };
-
+  console.log({ parsedBooking });
   if (!isBooking(parsedBooking)) {
     return err({
       type: 'FieldMismatch',
       code: 'InvalidFields',
-      message: `Expected a valid booking, but parsed "${Object.values(trimmedRow)}"`,
+      message: `Expected a valid booking, but parsed "${Object.values(
+        trimmedRow
+      )}"`,
       row: rowNumber,
-    }
-    );
+    });
   }
+  console.log('why');
   return ok(parsedBooking);
 }
 
 function checkHeaders(
   fieldsToCheck: string[] | undefined,
   headers: string[]
-): Result<true, Error> {
-  const error = new Error(
+): Result<true, ParseError> {
+  const errorMessage = () =>
     `Mismatched headers. Expected: ${headers.reduce(
       (acc, header) => `${acc}, ${header}`
     )}. Got: ${
       fieldsToCheck
         ? fieldsToCheck.reduce((acc, header) => `${acc}, ${header} `)
         : 'undefined'
-    }`
-  );
+    }`;
 
   if (!fieldsToCheck) {
-    return err(error);
+    return err({
+      type: 'HeaderMismatch',
+      code: 'TooFewFields',
+      message: errorMessage(),
+      row: 0,
+    });
   }
   const headersMatch =
     fieldsToCheck.reduce((acc, key) => {
@@ -123,7 +138,12 @@ function checkHeaders(
     }, true) && fieldsToCheck.length === headers.length;
 
   if (!headersMatch) {
-    return err(error);
+    return err({
+      type: 'HeaderMismatch',
+      code: 'WrongFields',
+      message: errorMessage(),
+      row: 0,
+    });
   }
   return ok(true);
 }
