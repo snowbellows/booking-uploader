@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactModal from 'react-modal';
 import { useDropzone } from 'react-dropzone';
 import { ParseError } from 'papaparse';
@@ -48,8 +48,6 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
   const [errors, setErrors] = useState<string[]>([]);
 
   const onError = (newErrors: ParseError | ParseError[]) => {
-    console.log({ newErrors });
-
     const newErrorsArray = (
       Array.isArray(newErrors) ? newErrors : [newErrors]
     ).map((error) => {

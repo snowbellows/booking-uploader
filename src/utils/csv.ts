@@ -1,4 +1,4 @@
-import { ok, err, Result, combineWithAllErrors, combine } from 'neverthrow';
+import { ok, err, Result, combine } from 'neverthrow';
 import Papa, { ParseConfig, ParseResult, Parser, ParseError } from 'papaparse';
 
 import { Booking, isBooking, keys } from './booking';
