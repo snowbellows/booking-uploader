@@ -73,7 +73,7 @@ function parseBooking(
     return err({
       type: 'FieldMismatch',
       code: 'TooManyFields',
-      message: `Too many fields: Expected ${keys.length} fields but parsed ${
+      message: `Too many fields: expected ${keys.length} fields but parsed ${
         keys.length + trimmedRow.__parsed_extra.length
       }`,
       row: rowNumber,
