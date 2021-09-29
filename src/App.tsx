@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Dropzone from 'react-dropzone'
 import './App.css'
+import { parseFile } from './utils/csv';
 
 const apiUrl = 'http://localhost:3001'
 
@@ -22,7 +23,10 @@ export const App = () => {
   }, [])
 
   const onDrop = (files: File[]) => {
-    console.log(files)
+    files.forEach(
+      file => {parseFile(file)}
+    )
+    
   }
 
   return (
