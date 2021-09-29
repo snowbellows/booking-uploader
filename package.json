@@ -6,6 +6,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "neverthrow": "^4.2.2",
+    "node-sass": "5",
     "papaparse": "^5.3.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
