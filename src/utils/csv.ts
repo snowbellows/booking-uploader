@@ -20,7 +20,6 @@ export function parseFile(
     console.log({ chunkNumber });
     checkHeaders(trimmedFields, keys).match(
       () => {
-        console.log({ results: results.data });
         const bookings = combine(results.data
           .map((row) => {
             const bookingResult = parseBooking(row, rowNumber)
@@ -96,7 +95,6 @@ function parseBooking(
   }
 
   const parsedBooking = { ...trimmedRow, duration: parsedDuration };
-  console.log({ parsedBooking });
   if (!isBooking(parsedBooking)) {
     return err({
       type: 'FieldMismatch',
@@ -107,7 +105,6 @@ function parseBooking(
       row: rowNumber,
     });
   }
-  console.log('why');
   return ok(parsedBooking);
 }
 
