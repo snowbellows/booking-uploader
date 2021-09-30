@@ -4,8 +4,8 @@ import { useDropzone } from 'react-dropzone';
 import { ParseError } from 'papaparse';
 import uniq from 'lodash/uniq';
 
-import { Booking, keys as bookingHeaders } from '../../utils/booking';
-import { parseFile } from '../../utils/csv';
+import { Booking } from '../../utils/booking';
+import { parseBookings } from '../../utils/parseBookings';
 import {
   baseStyle,
   activeStyle,
@@ -39,19 +39,23 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
   };
 
   const displayPreview = (newBookings: Booking[]) => {
-    const headerString = bookingHeaders.join(',');
+    const headerString =
+      newBookings[0] && Object.keys(newBookings[0]).join(',');
     const bookingStrings = newBookings.map((booking) =>
       Object.values(booking).join(',')
     );
     console.log({ newBookings });
-    setPreviewBookings([headerString, ...bookingStrings]);
+    setPreviewBookings([
+      ...(headerString ? [headerString] : []),
+      ...bookingStrings,
+    ]);
   };
 
   const onDrop = (files: File[]) => {
     setErrors([]);
     setPreviewBookings([]);
     files.forEach((file) => {
-      parseFile(file, onError, displayPreview, 5);
+      parseBookings(file, onError, displayPreview, 5);
     });
   };
 

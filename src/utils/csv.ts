@@ -1,111 +1,75 @@
-import { ok, err, Result, combine } from 'neverthrow';
+import { ok, err, Result } from 'neverthrow';
 import Papa, { ParseConfig, ParseResult, Parser, ParseError } from 'papaparse';
 
-import { Booking, isBooking, keys } from './booking';
+import { trimString } from './helpers';
+export interface ParseFileConfig<T> {
+  file: File;
+  rowParserConfig: RowParserConfig<T>;
+  onError: (error: ParseError | ParseError[]) => void;
+  onSuccess: (parsedRows: T[]) => void;
+  preview: number;
+}
 
-export function parseFile(
-  file: File,
-  onError: (error: ParseError | ParseError[]) => void,
-  onChunk: (bookings: Booking[]) => void,
-  preview = 0
-) {
+export function parseFile<T>({
+  file,
+  rowParserConfig,
+  onError,
+  onSuccess,
+  preview = 0,
+}: ParseFileConfig<T>) {
   let chunkNumber = 0;
   let rowNumber = 0; // zero indexed, excludes header row to align with papaparse
+
   function parseChunk(
-    results: ParseResult<{ [key: string]: string | string[] }>,
+    results: ParseResult<{ [key: string]: string }>,
     parser: Parser
   ): void {
     const trimmedFields = results.meta.fields?.map((field) => field.trim());
     chunkNumber++;
     console.log({ chunkNumber });
-    checkHeaders(trimmedFields, keys).match(
-      () => {
-        const bookings = combine(results.data
-          .map((row) => {
-            const bookingResult = parseBooking(row, rowNumber)
-            rowNumber++;
-            return bookingResult
-          })
-          .filter((bookingResult) => {
-            if (bookingResult.isErr()) {
-              bookingResult.mapErr(e => {onError(e)})
-              return false
-            }
-            return true
-          })).unwrapOr([]);
+    const headersResult = checkHeaders(trimmedFields, rowParserConfig.headers);
+    if (headersResult.isErr()) {
+      onError(headersResult.error);
+      parser.abort();
+      console.log('gets here');
+    } else {
+      const parsedRows = results.data.reduce(
+        (acc, row) => {
+          const rowResult = rowParser(rowParserConfig)(row, rowNumber);
+          rowNumber++;
+          if (rowResult.isOk()) {
+            const newRows = [...acc.rows, rowResult.value];
+            return {
+              rows: newRows,
+              errors: acc.errors,
+            };
+          }
 
-        onChunk(bookings)
-        onError(results.errors);
-      },
-      (e) => {
-        onError(e);
-        parser.abort();
-      }
-    );
+          const newErrors = [...acc.errors, rowResult.error];
+          return {
+            rows: acc.rows,
+            errors: newErrors,
+          };
+        },
+        { rows: [], errors: [] } as {
+          rows: T[];
+          errors: ParseError[];
+        }
+      );
+
+      onSuccess(parsedRows.rows);
+
+      onError([...parsedRows.errors, ...results.errors]);
+    }
   }
+
   const config: ParseConfig = {
     chunk: parseChunk,
     header: true,
     preview,
     worker: true,
   };
-  Papa.parse(file, config);
-}
-
-function trimString(s: string) {
-  return s.trim();
-}
-
-function parseBooking(
-  row: { [key: string]: string | string[] },
-  rowNumber: number
-): Result<Booking, ParseError> {
-  const trimmedRow: { [key: string]: string | string[] } = Object.entries(
-    row
-  ).reduce((acc, [key, value]) => {
-    return {
-      ...acc,
-      [trimString(key)]: typeof value === 'string' ? trimString(value) : value,
-    };
-  }, {});
-
-  if (trimmedRow.__parsed_extra) {
-    return err({
-      type: 'FieldMismatch',
-      code: 'TooManyFields',
-      message: `Too many fields: expected ${keys.length} fields but parsed ${
-        keys.length + trimmedRow.__parsed_extra.length
-      }`,
-      row: rowNumber,
-    });
-  }
-
-  const parsedDuration =
-    typeof trimmedRow.duration === 'string'
-      ? parseInt(trimmedRow.duration)
-      : NaN;
-
-  if (isNaN(parsedDuration)) {
-    return err({
-      type: 'FieldMismatch',
-      code: 'InvalidFields',
-      message: `Expected an integer for field "duration", but parsed "${trimmedRow.duration}"`,
-      row: rowNumber,
-    });
-  }
-
-  const parsedBooking = { ...trimmedRow, duration: parsedDuration };
-  if (!isBooking(parsedBooking)) {
-    return err({
-      type: 'FieldMismatch',
-      code: 'InvalidFields',
-      message: `Expected a valid booking, but parsed "${Object.values(
-        trimmedRow
-      )}"`,
-      row: rowNumber,
-    });
-  }
-  return ok(parsedBooking);
+  Papa.parse<{ [key: string]: string }>(file, config);
 }
 
 function checkHeaders(
@@ -143,4 +107,94 @@ function checkHeaders(
     });
   }
   return ok(true);
+}
+
+export interface RowParserConfig<T> {
+  typeCast: (tbd: any) => tbd is T;
+  headers: string[];
+  fieldTransformers: {
+    [key: string]: {
+      transform: (value: string) => Result<any, any>;
+      message: (value: string) => string;
+    };
+  };
+}
+
+function rowParser<T>(config: RowParserConfig<T>) {
+  return (row: { [key: string]: string }, rowNumber: number) =>
+    parseRow(row, rowNumber, config);
+}
+
+function parseRow<T>(
+  row: { [key: string]: string },
+  rowNumber: number,
+  { typeCast, fieldTransformers, headers }: RowParserConfig<T>
+): Result<T, ParseError> {
+  if (row.__parsed_extra) {
+    /* 
+    This elimantes the only string[] field in objects from papaparse \
+    Allowing us to treat rows as {[key: string]: string} througout
+    */
+    return err({
+      type: 'FieldMismatch',
+      code: 'TooManyFields',
+      message: `Too many fields: expected ${headers.length} fields but parsed ${
+        headers.length + row.__parsed_extra.length
+      }`,
+      row: rowNumber,
+    });
+  }
+
+  function transformObject<T>(
+    acc: Result<T, ParseError>,
+    [key, value]: string[]
+  ): Result<T, ParseError> {
+    if (acc.isErr()) {
+      return acc;
+    }
+    const trimmedKey = trimString(key);
+    const trimmedValue = trimString(value);
+
+    const fieldTransformer = fieldTransformers[trimmedKey];
+    if (fieldTransformer) {
+      const transformResult = fieldTransformer.transform(trimmedValue);
+
+      if (transformResult.isErr()) {
+        return err({
+          type: 'FieldMismatch',
+          code: 'InvalidFields',
+          message: fieldTransformer.message(trimmedValue),
+          row: rowNumber,
+        });
+      }
+      return acc.map((accObj) => ({
+        ...accObj,
+        [trimmedKey]: transformResult.value,
+      }));
+    }
+
+    return acc.map((accObj) => ({ ...accObj, [trimmedKey]: trimmedValue }));
+  }
+
+  const transformedObject = Object.entries(row).reduce(
+    transformObject,
+    ok({}) as Result<{ [key: string]: any }, ParseError>
+  );
+
+  if (transformedObject.isErr()) {
+    return err(transformedObject.error);
+  }
+
+  if (typeCast(transformedObject.value)) {
+    return ok(transformedObject.value);
+  }
+  return err({
+    type: 'FieldMismatch',
+    code: 'InvalidFields',
+    // prettier-ignore
+    message: `Expected a valid booking, but parsed "${
+      Object.values(row).join(',')
+    }"`,
+    row: rowNumber,
+  });
 }
