@@ -134,8 +134,8 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
         <code>01 Mar 2020 11:00:00 GMT+1000,300,0001</code>
         <code>02 Mar 2020 14:00:00 GMT+1000,300,0001</code>
       </pre>
-      <p>
-        Notes:
+      <section>
+        <p>Notes:</p>
         <ul>
           <li>
             Spaces between commas and the next field are accepted and will be
@@ -152,13 +152,13 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
           </li>
           <li>
             The time fields must be formatted as shown in examples. <br />
-            Valid: <code>02 Mar 2020 14:00:00 GMT+1000</code> <br /> Invalid:
-            <code>02 March 2020 2pm</code>
+            Valid: <code>02 Mar 2020 14:00:00 GMT+1000</code> <br />
+            Invalid: <code>02 March 2020 2pm</code>
           </li>
           <li>
             The duration fields must be valid numbers in seconds as shown in
-            examples. <br /> Valid: <code>300</code> <br /> Invalid:
-            <code>5m</code>
+            examples. <br /> Valid: <code>300</code> <br />
+            Invalid: <code>5m</code>
           </li>
           <li>
             The userId fields must be 4 digit numbers as shown in examples with
@@ -166,7 +166,7 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
             Valid: <code>0003</code> <br /> Invalid: <code>3</code>
           </li>
         </ul>
-      </p>
+      </section>
     </ReactModal>
   );
 };
