@@ -4,43 +4,20 @@ import { useDropzone } from 'react-dropzone';
 import { ParseError } from 'papaparse';
 import uniq from 'lodash/uniq';
 
-import { Booking, keys as bookingHeaders } from '../utils/booking';
-import { parseFile } from '../utils/csv';
+import { Booking, keys as bookingHeaders } from '../../utils/booking';
+import { parseFile } from '../../utils/csv';
+import {
+  baseStyle,
+  activeStyle,
+  acceptStyle,
+  rejectStyle,
+} from './dropzoneStyles';
 
 import './styles.scss';
 
 type UploadModalProps = {
   isOpen: boolean;
   closeModal: () => void;
-};
-
-const baseStyle = {
-  flex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '20px',
-  borderWidth: 2,
-  borderRadius: 2,
-  borderColor: '#0e0e0e',
-  borderStyle: 'dashed',
-  backgroundColor: '#fafafa',
-  color: '#0e0e0e',
-  outline: 'none',
-  transition: 'border .24s ease-in-out',
-  width: '100%',
-};
-
-const activeStyle = {
-  borderColor: '#2196f3',
-};
-
-const acceptStyle = {
-  borderColor: '#00e676',
-};
-
-const rejectStyle = {
-  borderColor: '#ff1744',
 };
 
 export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {

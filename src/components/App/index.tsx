@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-import { UploadModal } from './components/UploadModal';
+import { UploadModal } from '../UploadModal';
 
-import './App.scss';
+import './styles.scss';
 
 const apiUrl = 'http://localhost:3001';
 
