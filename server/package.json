@@ -1,0 +1,16 @@
+{
+  "name": "booking-uploader-server",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "lodash": "^4.17.21",
+    "luxon": "^2.0.2",
+    "neverthrow": "^4.2.2"
+  },
+  "scripts": {
+    "server": "node index.js"
+  }
+}
