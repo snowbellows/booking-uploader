@@ -5,12 +5,21 @@ import { DateTime } from 'luxon';
 import { Booking, isBooking, keys } from './booking';
 import { parseFile } from './csv';
 
-export function parseBookings(
-  file: File,
-  onError: (error: ParseError | ParseError[]) => void,
-  onSuccess: (bookings: Booking[]) => void,
-  preview = 0
-) {
+type ParseBookingsConfig = {
+  file: File;
+  onError: (error: ParseError | ParseError[]) => void;
+  onSuccess: (bookings: Booking[]) => void;
+  onComplete?: () => void;
+  preview?: number;
+};
+
+export function parseBookings({
+  file,
+  onError,
+  onSuccess,
+  onComplete = () => {},
+  preview = 0,
+}: ParseBookingsConfig) {
   const rowParserConfig = {
     typeCast: isBooking,
     headers: keys,
@@ -38,6 +47,7 @@ export function parseBookings(
     rowParserConfig,
     onError,
     onSuccess,
+    onComplete,
     preview,
   });
 }

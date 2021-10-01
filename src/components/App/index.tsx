@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon';
 import React, { useState, useEffect } from 'react';
+import { getBookings } from '../../services/api';
 
 import { UploadModal } from '../UploadModal';
 
 import './styles.scss';
 
-const apiUrl = 'http://localhost:3001';
 
 type TimeStamp = string;
 type Seconds = number;
@@ -18,11 +18,21 @@ type Booking = {
 export const App = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined)
+
+  const addBookings = (newBookings: Booking[]) => {
+    setBookings([...bookings, ...newBookings]);
+  };
 
   useEffect(() => {
-    fetch(`${apiUrl}/bookings`)
-      .then((response) => response.json())
-      .then(setBookings);
+    setError(undefined)
+    getBookings()
+      .then(result => {
+        result.match((bookings) => setBookings(bookings), (error) => {
+          setError('Could not get bookings from server. Try again later.')
+        })
+      });
   }, []);
 
   return (
@@ -32,10 +42,18 @@ export const App = () => {
         closeModal={() => {
           setUploadModalOpen(false);
         }}
+        uploading={uploading}
+        setUploading={setUploading}
+        addBookings={addBookings}
+        setError={setError}
+        existingBookings={bookings}
       />
       <div className="App-header">
         <button onClick={() => setUploadModalOpen(true)}>Upload</button>
       </div>
+      {error && (
+        <div>{error}</div>
+      )}
       <div className="App-main">
         <p>Existing bookings:</p>
         {bookings.map((booking, i) => {
@@ -43,7 +61,9 @@ export const App = () => {
           const duration = booking.duration / (60 * 1000);
           return (
             <p key={i} className="App-booking">
-              <span className="App-booking-time">{date.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}</span>
+              <span className="App-booking-time">
+                {date.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}
+              </span>
               <span className="App-booking-duration">
                 {duration.toFixed(1)}
               </span>

@@ -7,6 +7,7 @@ export interface ParseFileConfig<T> {
   rowParserConfig: RowParserConfig<T>;
   onError: (error: ParseError | ParseError[]) => void;
   onSuccess: (parsedRows: T[]) => void;
+  onComplete: () => void;
   preview: number;
 }
 
@@ -15,6 +16,7 @@ export function parseFile<T>({
   rowParserConfig,
   onError,
   onSuccess,
+  onComplete,
   preview = 0,
 }: ParseFileConfig<T>) {
   let chunkNumber = 0;
@@ -31,7 +33,6 @@ export function parseFile<T>({
     if (headersResult.isErr()) {
       onError(headersResult.error);
       parser.abort();
-      console.log('gets here');
     } else {
       const parsedRows = results.data.reduce(
         (acc, row) => {
@@ -65,6 +66,8 @@ export function parseFile<T>({
 
   const config: ParseConfig = {
     chunk: parseChunk,
+    chunkSize: 10000,
+    complete: onComplete,
     header: true,
     preview,
     worker: true,

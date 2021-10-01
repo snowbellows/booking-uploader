@@ -14,15 +14,30 @@ import {
 } from './dropzoneStyles';
 
 import './styles.scss';
+import { postBookingsBulk } from '../../services/api';
 
 type UploadModalProps = {
   isOpen: boolean;
   closeModal: () => void;
+  uploading: boolean;
+  setUploading: (uploading: boolean) => void;
+  addBookings: (newBookings: Booking[]) => void;
+  setError: (error: string | undefined) => void;
+  existingBookings: Booking[]
 };
 
-export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
+export const UploadModal = ({
+  isOpen,
+  closeModal,
+  uploading,
+  setUploading,
+  addBookings,
+  setError,
+  existingBookings
+}: UploadModalProps) => {
   const [previewBookings, setPreviewBookings] = useState<string[]>([]);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [parseErrors, setParseErrors] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
 
   const onError = (newErrors: ParseError | ParseError[]) => {
     const newErrorsArray = (
@@ -32,10 +47,10 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
         return error.message;
       }
 
-      return `Row ${error.row + 2}: ${error.message}`;
+      return `Skipped row ${error.row + 2}: ${error.message}`;
     });
 
-    setErrors((oldErrors) => [...newErrorsArray, ...oldErrors]);
+    setParseErrors((oldErrors) => [...newErrorsArray, ...oldErrors]);
   };
 
   const displayPreview = (newBookings: Booking[]) => {
@@ -44,18 +59,47 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
     const bookingStrings = newBookings.map((booking) =>
       Object.values(booking).join(',')
     );
-    console.log({ newBookings });
     setPreviewBookings([
       ...(headerString ? [headerString] : []),
       ...bookingStrings,
     ]);
   };
 
-  const onDrop = (files: File[]) => {
-    setErrors([]);
+  const onDrop = (newFiles: File[]) => {
+    setParseErrors([]);
+    setPreviewBookings([]);
+    setFiles(newFiles);
+    newFiles.forEach((file) => {
+      parseBookings({ file, onError, onSuccess: displayPreview, preview: 5 });
+    });
+  };
+
+  const processAndUpload = (newBookings: Booking[]) => {
+    addBookings(newBookings);
+    postBookingsBulk(newBookings).then((result) => {
+      if (result.isErr()) {
+        console.log(result.error);
+        const errorMessage = 'Upload Failed. Try again Later';
+        setError(errorMessage);
+        setParseErrors([...parseErrors, errorMessage]);
+      }
+    });
+  };
+
+  const onSubmit = () => {
+    setUploading(true);
+    setError(undefined);
+    setParseErrors([]);
     setPreviewBookings([]);
     files.forEach((file) => {
-      parseBookings(file, onError, displayPreview, 5);
+      parseBookings({
+        file,
+        onError,
+        onSuccess: processAndUpload,
+        onComplete: () => {
+          setUploading(false);
+        },
+      });
     });
   };
 
@@ -79,8 +123,8 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
   );
 
   const filteredErrors = useMemo(() => {
-    return uniq(errors);
-  }, [errors]);
+    return uniq(parseErrors);
+  }, [parseErrors]);
 
   return (
     <ReactModal
@@ -103,7 +147,7 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
           <p>Drop some files here, or click to select files</p>
         </div>
       </section>
-      {errors.length > 0 && (
+      {parseErrors.length > 0 && (
         <div>
           <h2 className="UploadModal-error UploadModal-subheading">Errors</h2>
           <ul>
@@ -123,6 +167,9 @@ export const UploadModal = ({ isOpen, closeModal }: UploadModalProps) => {
           ))}
         </div>
       )}
+      <button disabled={files.length === 0 || uploading} onClick={onSubmit}>
+        Process and Upload
+      </button>
       <p>Make sure your csv file is properly formatted before upload.</p>
       <p>The file should start with a row of headings like:</p>
       <pre>
