@@ -28,7 +28,6 @@ let bookings = JSON.parse(fs.readFileSync('./bookings.json')).map(
 );
 
 app.get('/bookings', (_, res) => {
-  res.setHeader('Content-Type', 'application/json');
   res.json(bookings);
 });
 
@@ -39,7 +38,6 @@ app.post('/bookings', (req, res) => {
 
   if (validationResult.isErr()) {
     const err = validationResult.error;
-    res.setHeader('Content-Type', 'application/json');
     res
       .status(err.status)
       .json(err);
@@ -56,7 +54,6 @@ app.post('/bookings/bulk', (req, res) => {
 
   if (validationResult.isErr()) {
     const err = validationResult.error;
-    res.setHeader('Content-Type', 'application/json');
     res
       .status(err.status)
       .json(err);
