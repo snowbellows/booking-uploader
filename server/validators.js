@@ -7,7 +7,7 @@ const dateTimeFormat = "dd MMM yyyy HH:mm:ss 'GMT'ZZZ";
 function validateBookings(body) {
   if (typeof body !== 'object') {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: 'Body should be a single booking as an object',
     });
@@ -18,7 +18,7 @@ function validateBookings(body) {
 function validateBookingsBulk(body) {
   if (!Array.isArray(body)) {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: 'Body should be an array of bookings',
     });
@@ -35,7 +35,7 @@ function validateBooking(booking) {
 
   if (!keysMatch) {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: `Booking keys should be ${bookingKeys.join(', ')}`,
     });
@@ -45,7 +45,7 @@ function validateBooking(booking) {
 
   if (!parsedTime.isValid) {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: `Time values should be in the format "${dateTimeFormat}"`,
     });
@@ -55,7 +55,7 @@ function validateBooking(booking) {
 
   if (isNaN(parsedDuration)) {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: `Duration values should be integers`,
     });
@@ -64,7 +64,7 @@ function validateBooking(booking) {
 
   if (typeof booking.userId !== 'string' || !userIdRegex.test(booking.userId)) {
     return err({
-      code: '400',
+      status: 400,
       type: 'malformed-body',
       message: `userId values should be strings of four digits`,
     });

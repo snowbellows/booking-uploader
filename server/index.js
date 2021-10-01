@@ -8,9 +8,14 @@ const { validateBookings, validateBookingsBulk } = require('./validators');
 
 const dateTimeFormat = "dd MMM yyyy HH:mm:ss 'GMT'ZZZ";
 
+const jsonErrorHandler = async (err, req, res, next) => {
+  res.status(500).send(err);
+}
+
 const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // so that app can access
+app.use(jsonErrorHandler)
 
 let bookings = JSON.parse(fs.readFileSync('./bookings.json')).map(
   (bookingRecord) => {
@@ -36,8 +41,8 @@ app.post('/bookings', (req, res) => {
     const err = validationResult.error;
     res.setHeader('Content-Type', 'application/json');
     res
-      .status(err.code)
-      .json({ errorType: err.type, errorMessage: err.message });
+      .status(err.status)
+      .json(err);
   } else {
     bookings = [...bookings, validationResult.value];
   }
@@ -53,8 +58,8 @@ app.post('/bookings/bulk', (req, res) => {
     const err = validationResult.error;
     res.setHeader('Content-Type', 'application/json');
     res
-      .status(err.code)
-      .json({ errorType: err.type, errorMessage: err.message });
+      .status(err.status)
+      .json(err);
   } else {
     bookings = [...bookings, ...validationResult.value];
   }
