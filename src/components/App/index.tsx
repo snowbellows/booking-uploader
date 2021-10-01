@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import React, { useState, useEffect } from 'react';
 
 import { UploadModal } from '../UploadModal';
@@ -38,11 +39,11 @@ export const App = () => {
       <div className="App-main">
         <p>Existing bookings:</p>
         {bookings.map((booking, i) => {
-          const date = new Date(booking.time);
+          const date = DateTime.fromISO(booking.time);
           const duration = booking.duration / (60 * 1000);
           return (
             <p key={i} className="App-booking">
-              <span className="App-booking-time">{date.toString()}</span>
+              <span className="App-booking-time">{date.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}</span>
               <span className="App-booking-duration">
                 {duration.toFixed(1)}
               </span>
