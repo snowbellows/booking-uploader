@@ -29,7 +29,7 @@ app.get('/bookings', (_, res) => {
 
 app.post('/bookings', (req, res) => {
   const { body } = req;
-  console.log(body);
+
   const validationResult = validateBookings(body);
 
   if (validationResult.isErr()) {
@@ -46,7 +46,6 @@ app.post('/bookings', (req, res) => {
 
 app.post('/bookings/bulk', (req, res) => {
   const { body } = req;
-  console.log(body);
 
   const validationResult = validateBookingsBulk(body);
 
