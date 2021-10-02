@@ -3,8 +3,9 @@ import ReactModal from 'react-modal';
 import { useDropzone } from 'react-dropzone';
 import { ParseError } from 'papaparse';
 import uniq from 'lodash/uniq';
+import { DateTime } from 'luxon';
 
-import { Booking } from '../../utils/booking';
+import { InternalBooking } from '../../utils/booking';
 import { parseBookings } from '../../utils/parseBookings';
 import {
   baseStyle,
@@ -21,9 +22,9 @@ type UploadModalProps = {
   closeModal: () => void;
   uploading: boolean;
   setUploading: (uploading: boolean) => void;
-  addBookings: (newBookings: Booking[]) => void;
+  addBookings: (newBookings: InternalBooking[]) => void;
   setError: (error: string | undefined) => void;
-  existingBookings: Booking[]
+  existingBookings: InternalBooking[]
 };
 
 export const UploadModal = ({
@@ -53,11 +54,11 @@ export const UploadModal = ({
     setParseErrors((oldErrors) => [...newErrorsArray, ...oldErrors]);
   };
 
-  const displayPreview = (newBookings: Booking[]) => {
+  const displayPreview = (newBookings: InternalBooking[]) => {
     const headerString =
       newBookings[0] && Object.keys(newBookings[0]).join(',');
     const bookingStrings = newBookings.map((booking) =>
-      Object.values(booking).join(',')
+      `${booking.time.toLocaleString(DateTime.DATETIME_FULL)},${booking.duration},${booking.userId}`
     );
     setPreviewBookings([
       ...(headerString ? [headerString] : []),
@@ -74,11 +75,13 @@ export const UploadModal = ({
     });
   };
 
-  const processAndUpload = (newBookings: Booking[]) => {
+  const processAndUpload = (newBookings: InternalBooking[]) => {
     addBookings(newBookings);
     postBookingsBulk(newBookings).then((result) => {
       if (result.isErr()) {
-        console.log(result.error);
+        if (window.debug) {
+          console.error(result.error);
+        }
         const errorMessage = 'Upload Failed. Try again Later';
         setError(errorMessage);
         setParseErrors([...parseErrors, errorMessage]);

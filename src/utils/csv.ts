@@ -27,8 +27,11 @@ export function parseFile<T>({
     parser: Parser
   ): void {
     const trimmedFields = results.meta.fields?.map((field) => field.trim());
+
+    if (window.debug) {
+      console.log(`Processing chunk: ${chunkNumber}`);
+    }
     chunkNumber++;
-    console.log({ chunkNumber });
     const headersResult = checkHeaders(trimmedFields, rowParserConfig.headers);
     if (headersResult.isErr()) {
       onError(headersResult.error);
@@ -36,7 +39,11 @@ export function parseFile<T>({
     } else {
       const parsedRows = results.data.reduce(
         (acc, row) => {
+          if (window.debug) {
+            console.log(`Processing row: ${rowNumber}`);
+          }
           const rowResult = rowParser(rowParserConfig)(row, rowNumber);
+
           rowNumber++;
           if (rowResult.isOk()) {
             const newRows = [...acc.rows, rowResult.value];

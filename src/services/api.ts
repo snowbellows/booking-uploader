@@ -1,11 +1,11 @@
 import { err, Result } from 'neverthrow';
-import { Booking } from '../utils/booking';
+import { InternalBooking, ServerBooking, serverFromInternal } from '../utils/booking';
 import { wrapAsync } from '../utils/helpers';
 
 const apiUrl = 'http://localhost:3001';
 
 export async function getBookings(): Promise<
-  Result<Booking[], Error | undefined>
+  Result<ServerBooking[], Error | undefined>
 > {
   return wrapAsync(async () => {
     const response = await fetch(`${apiUrl}/bookings`);
@@ -15,13 +15,16 @@ export async function getBookings(): Promise<
 }
 
 export async function postBookingsBulk(
-  bookings: Booking[]
+  bookings: InternalBooking[]
 ): Promise<Result<'success', Error | undefined>> {
   return wrapAsync(async () => {
-    var headers = new Headers();
+    const headers = new Headers();
     headers.append('Accept', 'application/json');
     headers.append('Content-Type', 'application/json');
-    const raw = JSON.stringify(bookings);
+
+    const serverBookings = bookings.map(serverFromInternal)
+    const raw = JSON.stringify(serverBookings);
+
     const response = await fetch(`${apiUrl}/bookings/bulk`, {
       method: 'POST',
       body: raw,

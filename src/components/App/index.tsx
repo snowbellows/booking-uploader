@@ -1,38 +1,39 @@
 import { DateTime } from 'luxon';
 import React, { useState, useEffect } from 'react';
+
 import { getBookings } from '../../services/api';
+import { InternalBooking, internalFromServer } from '../../utils/booking';
 
 import { UploadModal } from '../UploadModal';
 
 import './styles.scss';
 
-
-type TimeStamp = string;
-type Seconds = number;
-type Booking = {
-  time: TimeStamp;
-  duration: Seconds;
-  userId: string;
-};
-
 export const App = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<InternalBooking[]>([]);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined)
+  const [error, setError] = useState<string | undefined>(undefined);
 
-  const addBookings = (newBookings: Booking[]) => {
+  const addBookings = (newBookings: InternalBooking[]) => {
     setBookings([...bookings, ...newBookings]);
   };
 
   useEffect(() => {
-    setError(undefined)
-    getBookings()
-      .then(result => {
-        result.match((bookings) => setBookings(bookings), (error) => {
-          setError('Could not get bookings from server. Try again later.')
-        })
-      });
+    setError(undefined);
+    getBookings().then((result) => {
+      result.match(
+        (serverBookings) => {
+          const newBookings = serverBookings.map(internalFromServer);
+          setBookings(newBookings);
+        },
+        (error) => {
+          if (window.debug) {
+            console.error(error);
+          }
+          setError('Could not get bookings from server. Try again later.');
+        }
+      );
+    });
   }, []);
 
   return (
@@ -51,21 +52,17 @@ export const App = () => {
       <div className="App-header">
         <button onClick={() => setUploadModalOpen(true)}>Upload</button>
       </div>
-      {error && (
-        <div>{error}</div>
-      )}
+      {error && <div>{error}</div>}
       <div className="App-main">
         <p>Existing bookings:</p>
         {bookings.map((booking, i) => {
-          const date = DateTime.fromISO(booking.time);
-          const duration = booking.duration / (60 * 1000);
           return (
             <p key={i} className="App-booking">
               <span className="App-booking-time">
-                {date.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}
+                {booking.time.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}
               </span>
               <span className="App-booking-duration">
-                {duration.toFixed(1)}
+                {booking.duration}
               </span>
               <span className="App-booking-user">{booking.userId}</span>
             </p>

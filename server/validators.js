@@ -2,7 +2,6 @@ const { ok, err, combine } = require('neverthrow');
 const { DateTime } = require('luxon');
 
 const bookingKeys = ['time', 'duration', 'userId'];
-const dateTimeFormat = "dd MMM yyyy HH:mm:ss 'GMT'ZZZ";
 
 function validateBookings(body) {
   if (typeof body !== 'object') {
@@ -41,17 +40,20 @@ function validateBooking(booking) {
     });
   }
 
-  const parsedTime = DateTime.fromFormat(booking.time, dateTimeFormat);
+  const parsedTime = DateTime.fromISO(booking.time);
 
   if (!parsedTime.isValid) {
     return err({
       status: 400,
       type: 'malformed-body',
-      message: `Time values should be in the format "${dateTimeFormat}"`,
+      message: `Time values should be in the ISO format`,
     });
   }
 
-  const parsedDuration = parseInt(booking.duration);
+  const parsedDuration =
+    typeof booking.duration === 'string'
+      ? parseInt(booking.duration)
+      : booking.duration;
 
   if (isNaN(parsedDuration)) {
     return err({
@@ -72,7 +74,7 @@ function validateBooking(booking) {
 
   return ok({
     time: parsedTime,
-    duration: parsedDuration * 60 * 1000, // mins into ms
+    duration: parsedDuration,
     userId: booking.userId,
   });
 }
