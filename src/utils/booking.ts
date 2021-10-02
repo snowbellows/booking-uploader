@@ -6,7 +6,6 @@ type AdHocTimeStamp = string; // dd MMM yyyy HH:mm:ss 'GMT'ZZZ
 type Milliseconds = number;
 type Minutes = number;
 
-
 export interface ServerBooking {
   time: ISOTimeStamp; // ISO DateTime with timezone
   duration: Milliseconds; // milliseconds
@@ -20,7 +19,7 @@ export interface InternalBooking {
 }
 
 export interface CsvBooking {
-  time: AdHocTimeStamp; 
+  time: AdHocTimeStamp;
   duration: Minutes;
   userId: string;
 }
@@ -30,15 +29,18 @@ const dateFormat = "dd MMM yyyy HH:mm:ss 'GMT'ZZZ";
 
 export function isInternalBooking(tbd: any): tbd is InternalBooking {
   const checkTime =
-    (tbd as InternalBooking).time && (tbd as InternalBooking).time instanceof DateTime;
+    (tbd as InternalBooking).time &&
+    (tbd as InternalBooking).time instanceof DateTime;
   if (!checkTime) return false;
 
   const checkDuration =
-    (tbd as InternalBooking).duration && typeof (tbd as InternalBooking).duration === 'number';
+    (tbd as InternalBooking).duration &&
+    typeof (tbd as InternalBooking).duration === 'number';
   if (!checkDuration) return false;
 
   const checkUserId =
-    (tbd as InternalBooking).userId && typeof (tbd as InternalBooking).userId === 'string';
+    (tbd as InternalBooking).userId &&
+    typeof (tbd as InternalBooking).userId === 'string';
   if (!checkUserId) return false;
 
   if (Object.keys(tbd).length !== keys.length) return false;
@@ -75,7 +77,9 @@ export function transformUserId(value: string): Result<string, undefined> {
   return ok(value);
 }
 
-export function internalFromServer(serverBooking: ServerBooking): InternalBooking {
+export function internalFromServer(
+  serverBooking: ServerBooking
+): InternalBooking {
   return {
     time: DateTime.fromISO(serverBooking.time),
     duration: Math.floor(serverBooking.duration / (60 * 1000)),
@@ -83,10 +87,35 @@ export function internalFromServer(serverBooking: ServerBooking): InternalBookin
   };
 }
 
-export function serverFromInternal(internalBooking: InternalBooking): ServerBooking {
+export function serverFromInternal(
+  internalBooking: InternalBooking
+): ServerBooking {
   return {
     time: internalBooking.time.toISO(),
     duration: internalBooking.duration * (60 * 1000),
     userId: internalBooking.userId,
   };
+}
+
+export function bookingOverlaps(
+  newBooking: InternalBooking,
+  existingBookings: InternalBooking[]
+) {
+  const newBookingStart = newBooking.time.toMillis();
+  const newBookingEnd = newBookingStart + newBooking.duration * (60 * 1000);
+  return existingBookings.reduce((acc, existingBooking) => {
+    if (acc) {
+      return acc;
+    }
+    const existingBookingStart = existingBooking.time.toMillis();
+    const existingBookingEnd =
+      existingBookingStart + existingBooking.duration * (60 * 1000);
+
+    const newBookingStartsAfter = newBookingStart > existingBookingEnd;
+    const newBookingEndsBefore = newBookingEnd < existingBookingStart;
+
+    const noOverlap = newBookingStartsAfter || newBookingEndsBefore;
+
+    return !noOverlap || acc;
+  }, false);
 }
