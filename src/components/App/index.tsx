@@ -21,8 +21,8 @@ export const App = () => {
     newUnique: InternalBooking[];
     newOverlap: InternalBooking[];
   }) => {
-    setBookings([...bookings, ...newUnique]);
-    setOverlapBookings([...overlapBookings, ...newOverlap]);
+    setBookings((oldBookings) => [...oldBookings, ...newUnique]);
+    setOverlapBookings( (oldOverlapBookigns) => [...oldOverlapBookigns, ...newOverlap]);
   };
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export const App = () => {
         existingBookings={bookings}
       />
       <div className="App-header">
-        <button onClick={() => setUploadModalOpen(true)}>Upload</button>
+        <button onClick={() => setUploadModalOpen(true)}>{uploading ? 'Uploading...' : 'Upload'}</button>
       </div>
       {error && <div>{error}</div>}
       <div className="App-main">

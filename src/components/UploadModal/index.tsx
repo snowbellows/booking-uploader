@@ -114,13 +114,13 @@ export const UploadModal = ({
           }
           const errorMessage = 'Upload Failed. Try again Later';
           setError(errorMessage);
-          setParseErrors([...parseErrors, errorMessage]);
+          setParseErrors((oldErrors) => [errorMessage, ...oldErrors]);
         }
       });
     } else {
       const errorMessage = 'No unique bookings to upload';
       setError(errorMessage);
-      setParseErrors([...parseErrors, errorMessage]);
+      setParseErrors((oldErrors) => [errorMessage, ...oldErrors]);
     }
   };
 
@@ -210,12 +210,12 @@ export const UploadModal = ({
       </button>
       <p>Make sure your csv file is properly formatted before upload.</p>
       <p>The file should start with a row of headings like:</p>
-      <pre>
+      <pre className="UploadModal-codeblock">
         <code>time,duration,userId</code>
       </pre>
 
       <p>Followed by multiple rows of entries:</p>
-      <pre>
+      <pre className="UploadModal-codeblock">
         <code>01 Mar 2020 11:00:00 GMT+1000,300,0001</code>
         <code>02 Mar 2020 14:00:00 GMT+1000,300,0001</code>
       </pre>
@@ -225,7 +225,7 @@ export const UploadModal = ({
           <li>
             Spaces between commas and the next field are accepted and will be
             filtered out as in the following:
-            <pre>
+            <pre className="UploadModal-codeblock">
               <code>time, duration, userId</code>
               <code>01 Mar 2020 11:00:00 GMT+1000, 300, 0001</code>
               <code>02 Mar 2020 14:00:00 GMT+1000, 300, 0001</code>
