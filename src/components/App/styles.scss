@@ -27,21 +27,6 @@
   width: 100%;
 }
 
-.App-booking-time {
-  display: inline-block;
-  width: 400px;
-}
-
-.App-booking-duration {
-  display: inline-block;
-  width: 80px;
-}
-
-.App-booking-user {
-  display: inline-block;
-  width: 80px;
-}
-
 .App-row {
   display: flex;
 }
@@ -54,8 +39,5 @@
   &.right {
     border-left: 2px solid #222;
     padding-left: 5px;
-  }
-  &.overlap {
-    color: darkred;
   }
 }

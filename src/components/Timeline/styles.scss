@@ -1,0 +1,23 @@
+.Timeline-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+.Timeline-dateblock {
+  flex: 0 0 auto;
+}
+
+.Timeline-bookings {
+  justify-content: space-around;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  height: 500px;
+}
+
+.Timeline-booking {
+  background-color: rgb(181, 236, 236);
+
+  &.red {
+    background-color: rgb(245, 183, 183);
+  }
+}

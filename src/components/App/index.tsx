@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { DateTime } from 'luxon';
+import { uniqBy } from 'lodash';
+
 import { getBookings } from '../../services/api';
 import { InternalBooking, internalFromServer } from '../../utils/booking';
 
 import { UploadModal } from '../UploadModal';
+import { Timeline } from '../Timeline';
 
 import './styles.scss';
 
@@ -43,26 +45,11 @@ export const App = () => {
     });
   }, []);
 
-  const orderedBookings = useMemo(() => {
-    const unique = bookings.map((b) => ({ overlap: false, booking: b }));
-    const overlap = overlapBookings.map((b) => ({ overlap: true, booking: b }));
+  const dates = useMemo(() => {
+    const allDates = bookings.map((b) => b.time.startOf('day'));
 
-    return unique.concat(overlap).sort((first, second) => {
-      return first.booking.time.toMillis() > second.booking.time.toMillis()
-        ? 1
-        : 0;
-    });
-  }, [bookings, overlapBookings]);
-
-  const BookingComponent = ({ booking }: { booking: InternalBooking }) => (
-    <p className="App-booking">
-      <span className="App-booking-time">
-        {booking.time.toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS, {})}
-      </span>
-      <span className="App-booking-duration">{booking.duration}</span>
-      <span className="App-booking-user">{booking.userId}</span>
-    </p>
-  );
+    return uniqBy(allDates, (d) => d.toMillis());
+  }, [bookings]);
 
   return (
     <div className="App">
@@ -87,28 +74,13 @@ export const App = () => {
           <div className="App-row">
             <div className="App-column left">
               <h3>Existing Bookings</h3>
+              <Timeline bookings={bookings} dates={dates} />
             </div>
             <div className="App-column right">
               <h3>Overlapping Bookings</h3>
+              <Timeline bookings={overlapBookings} dates={dates} red />
             </div>
           </div>
-          {orderedBookings.map((b, i) => {
-            return b.overlap ? (
-              <div className="App-row" key={i}>
-                <div className="App-column left"></div>
-                <div className="App-column right overlap">
-                  <BookingComponent booking={b.booking} />
-                </div>
-              </div>
-            ) : (
-              <div className="App-row" key={i}>
-                <div className="App-column left">
-                  <BookingComponent booking={b.booking} />
-                </div>
-                <div className="App-column right overlap"></div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>

@@ -111,8 +111,8 @@ export function bookingOverlaps(
     const existingBookingEnd =
       existingBookingStart + existingBooking.duration * (60 * 1000);
 
-    const newBookingStartsAfter = newBookingStart > existingBookingEnd;
-    const newBookingEndsBefore = newBookingEnd < existingBookingStart;
+    const newBookingStartsAfter = newBookingStart >= existingBookingEnd;
+    const newBookingEndsBefore = newBookingEnd <= existingBookingStart;
 
     const noOverlap = newBookingStartsAfter || newBookingEndsBefore;
 
