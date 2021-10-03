@@ -21,6 +21,12 @@
   font-size: large;
 }
 
+.App-bookings {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .App-booking-time {
   display: inline-block;
   width: 400px;
@@ -34,4 +40,22 @@
 .App-booking-user {
   display: inline-block;
   width: 80px;
+}
+
+.App-row {
+  display: flex;
+}
+
+.App-column{ 
+  width: calc(50% - 5px);
+  &.left {
+    padding-right: 5px;
+  }
+  &.right {
+    border-left: 2px solid #222;
+    padding-left: 5px;
+  }
+  &.overlap {
+    color: darkred;
+  }
 }

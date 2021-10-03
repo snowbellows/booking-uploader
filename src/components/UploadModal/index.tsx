@@ -5,7 +5,7 @@ import { ParseError } from 'papaparse';
 import uniq from 'lodash/uniq';
 import { DateTime } from 'luxon';
 
-import { InternalBooking } from '../../utils/booking';
+import { bookingOverlaps, InternalBooking } from '../../utils/booking';
 import { parseBookings } from '../../utils/parseBookings';
 import {
   baseStyle,
@@ -22,9 +22,15 @@ type UploadModalProps = {
   closeModal: () => void;
   uploading: boolean;
   setUploading: (uploading: boolean) => void;
-  addBookings: (newBookings: InternalBooking[]) => void;
+  addBookings: ({
+    newUnique,
+    newOverlap,
+  }: {
+    newUnique: InternalBooking[];
+    newOverlap: InternalBooking[];
+  }) => void;
   setError: (error: string | undefined) => void;
-  existingBookings: InternalBooking[]
+  existingBookings: InternalBooking[];
 };
 
 export const UploadModal = ({
@@ -34,7 +40,7 @@ export const UploadModal = ({
   setUploading,
   addBookings,
   setError,
-  existingBookings
+  existingBookings,
 }: UploadModalProps) => {
   const [previewBookings, setPreviewBookings] = useState<string[]>([]);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
@@ -57,8 +63,11 @@ export const UploadModal = ({
   const displayPreview = (newBookings: InternalBooking[]) => {
     const headerString =
       newBookings[0] && Object.keys(newBookings[0]).join(',');
-    const bookingStrings = newBookings.map((booking) =>
-      `${booking.time.toLocaleString(DateTime.DATETIME_FULL)},${booking.duration},${booking.userId}`
+    const bookingStrings = newBookings.map(
+      (booking) =>
+        `${booking.time.toLocaleString(DateTime.DATETIME_FULL)},${
+          booking.duration
+        },${booking.userId}`
     );
     setPreviewBookings([
       ...(headerString ? [headerString] : []),
@@ -76,17 +85,43 @@ export const UploadModal = ({
   };
 
   const processAndUpload = (newBookings: InternalBooking[]) => {
-    addBookings(newBookings);
-    postBookingsBulk(newBookings).then((result) => {
-      if (result.isErr()) {
-        if (window.debug) {
-          console.error(result.error);
+    const sortedBookings = newBookings.reduce(
+      (acc, newBooking) => {
+        if (bookingOverlaps(newBooking, existingBookings)) {
+          return {
+            ...acc,
+            newOverlap: [...acc.newOverlap, newBooking],
+          };
         }
-        const errorMessage = 'Upload Failed. Try again Later';
-        setError(errorMessage);
-        setParseErrors([...parseErrors, errorMessage]);
+        return {
+          ...acc,
+          newUnique: [...acc.newUnique, newBooking],
+        };
+      },
+      { newUnique: [], newOverlap: [] } as {
+        newUnique: InternalBooking[];
+        newOverlap: InternalBooking[];
       }
-    });
+    );
+
+    addBookings(sortedBookings);
+
+    if (sortedBookings.newUnique.length > 0) {
+      postBookingsBulk(sortedBookings.newUnique).then((result) => {
+        if (result.isErr()) {
+          if (window.debug) {
+            console.error(result.error);
+          }
+          const errorMessage = 'Upload Failed. Try again Later';
+          setError(errorMessage);
+          setParseErrors([...parseErrors, errorMessage]);
+        }
+      });
+    } else {
+      const errorMessage = 'No unique bookings to upload';
+      setError(errorMessage);
+      setParseErrors([...parseErrors, errorMessage]);
+    }
   };
 
   const onSubmit = () => {
