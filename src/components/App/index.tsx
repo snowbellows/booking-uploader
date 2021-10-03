@@ -24,26 +24,31 @@ export const App = () => {
     newOverlap: InternalBooking[];
   }) => {
     setBookings((oldBookings) => [...oldBookings, ...newUnique]);
-    setOverlapBookings( (oldOverlapBookigns) => [...oldOverlapBookigns, ...newOverlap]);
+    setOverlapBookings((oldOverlapBookigns) => [
+      ...oldOverlapBookigns,
+      ...newOverlap,
+    ]);
   };
 
   useEffect(() => {
-    setError(undefined);
-    getBookings().then((result) => {
-      result.match(
-        (serverBookings) => {
-          const newBookings = serverBookings.map(internalFromServer);
-          setBookings(newBookings);
-        },
-        (error) => {
-          if (window.debug) {
-            console.error(error);
+    // Fires on page load and any time bookings have been uploaded
+    if (!uploading) {
+      getBookings().then((result) => {
+        result.match(
+          (serverBookings) => {
+            const newBookings = serverBookings.map(internalFromServer);
+            setBookings(newBookings);
+          },
+          (error) => {
+            if (window.debug) {
+              console.error(error);
+            }
+            setError('Could not get bookings from server. Try again later.');
           }
-          setError('Could not get bookings from server. Try again later.');
-        }
-      );
-    });
-  }, []);
+        );
+      });
+    }
+  }, [uploading]);
 
   const dates = useMemo(() => {
     const allDates = bookings.map((b) => b.time.startOf('day'));
@@ -65,7 +70,9 @@ export const App = () => {
         existingBookings={bookings}
       />
       <div className="App-header">
-        <button onClick={() => setUploadModalOpen(true)}>{uploading ? 'Uploading...' : 'Upload'}</button>
+        <button onClick={() => setUploadModalOpen(true)}>
+          {uploading ? 'Uploading...' : 'Upload'}
+        </button>
       </div>
       {error && <div>{error}</div>}
       <div className="App-main">
