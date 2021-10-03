@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DateTime } from 'luxon';
-import orderBy from 'lodash/orderBy';
 import { getBookings } from '../../services/api';
 import { InternalBooking, internalFromServer } from '../../utils/booking';
 
