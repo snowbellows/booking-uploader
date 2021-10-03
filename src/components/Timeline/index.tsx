@@ -4,9 +4,15 @@ import { InternalBooking } from '../../utils/booking';
 
 import './styles.scss';
 
-
-
-export const Timeline = ({ bookings, dates, red }: { bookings: InternalBooking[], dates: DateTime[], red?: boolean }) => {
+export const Timeline = ({
+  bookings,
+  dates,
+  red,
+}: {
+  bookings: InternalBooking[];
+  dates: DateTime[];
+  red?: boolean;
+}) => {
   const formatTime = (booking: InternalBooking) => {
     const startTime = booking.time.toLocaleString(DateTime.TIME_SIMPLE);
     const endTime = booking.time
@@ -15,10 +21,10 @@ export const Timeline = ({ bookings, dates, red }: { bookings: InternalBooking[]
     const timeZone = booking.time
       .toLocaleParts({ timeZoneName: 'short' })
       .find((p) => p.type === 'timeZoneName')?.value;
-  
+
     return `${startTime} - ${endTime} ${timeZone}`;
   };
-  
+
   const BookingComponent = ({ booking }: { booking: InternalBooking }) => (
     <div
       className={`Timeline-booking ${red ? 'red' : ''}`}
@@ -50,9 +56,9 @@ export const Timeline = ({ bookings, dates, red }: { bookings: InternalBooking[]
           <div key={i} className="Timeline-dateblock">
             <h3>{dateBookings.date.toLocaleString(DateTime.DATE_FULL)}</h3>
             <div className="Timeline-bookings">
-            {dateBookings.bookings.map((booking) => (
-              <BookingComponent booking={booking} />
-            ))}
+              {dateBookings.bookings.map((booking) => (
+                <BookingComponent booking={booking} />
+              ))}
             </div>
           </div>
         );
