@@ -9,3 +9,11 @@
 .UploadModal-error {
   color: darkred;
 }
+
+.UploadModal-codeblock {
+  background-color: oldlace;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  width: fit-content;
+}
